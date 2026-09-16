@@ -1,0 +1,45 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}hannyHR{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar-inner">
+        <a class="brand" href="{% url 'leave:leave_type_list' %}">hanny<span>HR</span></a>
+        <nav class="nav">
+            <a href="{% url 'leave:leave_type_list' %}">Overview</a>
+            <a href="{% url 'leave:request_list' %}">Leave requests</a>
+            <a href="{% url 'leave:request_new' %}">Document leave</a>
+            <a href="{% url 'admin:index' %}">Admin</a>
+        </nav>
+        <div class="topbar-user">
+            {% if user.is_authenticated %}
+                <span>{{ user.get_full_name|default:user.username }}</span>
+                <form method="post" action="{% url 'admin:logout' %}">
+                    {% csrf_token %}
+                    <button class="btn btn-link" type="submit">Log out</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</header>
+
+<main class="container">
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+</main>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

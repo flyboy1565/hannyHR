@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load static widget_tweaks %}
+
+{% block title %}
+    {% if editing %}Edit{% else %}Document{% endif %} · {{ leave_type.name }} · hannyHR
+{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1>
+            <span class="badge" style="background: {{ leave_type.color }}">{{ leave_type.name }}</span>
+            {% if editing %}Edit leave record{% else %}Document leave{% endif %}
+        </h1>
+        <p class="muted">
+            {{ employee.full_name }} ({{ employee.employee_id }}) · {{ employee.department|default:'No department' }}
+        </p>
+    </div>
+    <a class="btn btn-ghost" href="{% url 'leave:request_list' %}">Back to list</a>
+</section>
+
+{% if form.errors %}
+    <div class="alert alert-error">
+        <strong>Please fix the errors below.</strong>
+    </div>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data" class="dynamic-form" data-conditional-form>
+    {% csrf_token %}
+    {{ form.employee }}
+    {{ form.leave_type }}
+
+    <section class="form-section">
+        <h2 class="section-title">Leave details</h2>
+        <div class="grid grid-2">
+            <div class="field">
+                <label for="{{ form.summary.id_for_label }}">{{ form.summary.label }}</label>
+                {% render_field form.summary class="form-input" %}
+                {% if form.summary.help_text %}<p class="help-text">{{ form.summary.help_text }}</p>{% endif %}
+                {% for err in form.summary.errors %}<p class="error-text">{{ err }}</p>{% endfor %}
+            </div>
+            <div class="field">
+                <label for="{{ form.start_date.id_for_label }}">Start date</label>
+                {% render_field form.start_date class="form-input" %}
+                {% for err in form.start_date.errors %}<p class="error-text">{{ err }}</p>{% endfor %}
+            </div>
+            <div class="field">
+                <label for="{{ form.end_date.id_for_label }}">End date</label>
+                {% render_field form.end_date class="form-input" %}
+                {% for err in form.end_date.errors %}<p class="error-text">{{ err }}</p>{% endfor %}
+            </div>
+        </div>
+    </section>
+
+    {% for group_label, fields in attribute_groups %}
+        {% if fields %}
+            <section class="form-section">
+                {% if group_label != '__ungrouped__' %}
+                    <h2 class="section-title">{{ group_label }}</h2>
+                {% endif %}
+                <div class="grid grid-2">
+                    {% for attribute, bound_field in fields %}
+                        <div class="field{% if attribute.field_type == 'textarea' or attribute.field_type == 'richtext' or attribute.field_type == 'multiselect' %} field-wide{% endif %}{% if attribute.required %} field-required{% endif %}"
+                             data-attribute="{{ attribute.name }}">
+                            <label for="{{ bound_field.id_for_label }}">
+                                {{ bound_field.label }}
+                                {% if attribute.required %}<span class="req-star" title="Required">*</span>{% endif %}
+                            </label>
+                            {% if attribute.field_type == 'boolean' %}
+                                <div class="checkbox-wrap">
+                                    {{ bound_field }}
+                                    {% if attribute.help_text %}<span class="checkbox-label">{{ attribute.help_text }}</span>{% endif %}
+                                </div>
+                            {% elif attribute.field_type == 'multiselect' %}
+                                <div class="checkbox-group">
+                                    {% for checkbox in bound_field %}
+                                        <label class="checkbox-option">{{ checkbox.tag }} {{ checkbox.choice_label }}</label>
+                                    {% endfor %}
+                                </div>
+                                {% if attribute.help_text %}<p class="help-text">{{ attribute.help_text }}</p>{% endif %}
+                            {% elif attribute.field_type == 'file' %}
+                                {{ bound_field }}
+                                {% if attribute.help_text %}<p class="help-text">{{ attribute.help_text }}</p>{% endif %}
+                            {% else %}
+                                {% render_field bound_field class="form-input" %}
+                                {% if attribute.help_text %}<p class="help-text">{{ attribute.help_text }}</p>{% endif %}
+                            {% endif %}
+                            {% for err in bound_field.errors %}<p class="error-text">{{ err }}</p>{% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endif %}
+    {% endfor %}
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">
+            {% if editing %}Save changes{% else %}Save leave record{% endif %}
+        </button>
+        {% if editing %}
+            <a class="btn btn-ghost" href="{% url 'leave:leave_detail' editing.pk %}">Cancel</a>
+        {% endif %}
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/leave-form.js' %}"></script>
+{% endblock %}

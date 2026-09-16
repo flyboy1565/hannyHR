@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ request_obj.employee.full_name }} · {{ request_obj.leave_type.name }} · hannyHR{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1>
+            <span class="badge" style="background: {{ request_obj.leave_type.color }}">{{ request_obj.leave_type.name }}</span>
+            {{ request_obj.employee.full_name }}
+        </h1>
+        <p class="muted">
+            {{ request_obj.employee.employee_id }} · {{ request_obj.employee.department|default:'No department' }} ·
+            {{ request_obj.start_date }} → {{ request_obj.end_date }}
+        </p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-primary" href="{% url 'leave:request_edit' request_obj.pk %}">Edit</a>
+        <a class="btn btn-ghost" href="{% url 'leave:request_list' %}">Back</a>
+    </div>
+</section>
+
+{% if request_obj.summary %}
+    <div class="card callout">
+        <strong>Reason summary:</strong> {{ request_obj.summary }}
+    </div>
+{% endif %}
+
+<h2 class="section-title">Documentation items</h2>
+<div class="table-wrap">
+    <table class="detail-table">
+        <tbody>
+            {% for value in values %}
+                {% ifchanged value.attribute.group %}
+                    {% if value.attribute.group %}
+                        <tr class="group-row"><td colspan="2"><strong>{{ value.attribute.group }}</strong></td></tr>
+                    {% endif %}
+                {% endifchanged %}
+                <tr>
+                    <th>{{ value.attribute.label }}</th>
+                    <td>
+                        {% if value.attribute.field_type == 'file' %}
+                            {% if value.value_file %}
+                                <a href="{{ value.value_file.url }}" target="_blank">Download attachment</a>
+                            {% else %}
+                                <span class="muted">No file</span>
+                            {% endif %}
+                        {% else %}
+                            {{ value.display_value|default:'—'|linebreaksbr }}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="2" class="muted">No documentation items recorded.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<p class="muted small audit">
+    Recorded by {{ request_obj.created_by.get_full_name|default:request_obj.created_by|default:'—' }}
+    on {{ request_obj.created_at|date:'j M Y H:i' }}{% if request_obj.updated_at != request_obj.created_at %}, last updated {{ request_obj.updated_at|date:'j M Y H:i' }}{% endif %}.
+</p>
+{% endblock %}

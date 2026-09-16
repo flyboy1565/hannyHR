@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Overview · hannyHR{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1>Leave documentation</h1>
+        <p class="muted">Teams of leave types and the documentation items HR must complete.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-primary" href="{% url 'leave:request_new' %}">Document a leave</a>
+    </div>
+</section>
+
+<h2 class="section-title">Leave types</h2>
+<div class="grid grid-3">
+    {% for leave_type in leave_types %}
+        <div class="card">
+            <div class="card-head">
+                <span class="badge" style="background: {{ leave_type.color }}">{{ leave_type.name }}</span>
+                <span class="muted">{{ leave_type.request_count }} recorded</span>
+            </div>
+            {% if leave_type.description %}
+                <p class="card-desc">{{ leave_type.description }}</p>
+            {% endif %}
+            <div class="card-actions">
+                <a class="btn btn-sm" href="{% url 'leave:request_new' %}">Document</a>
+                <a class="btn btn-sm btn-ghost" href="{% url 'leave:request_list' %}?leave_type={{ leave_type.slug }}">History</a>
+            </div>
+        </div>
+    {% empty %}
+        <div class="card span-full">
+            <p class="muted">No leave types configured yet. Create them in the
+                <a href="{% url 'admin:leave_leavetype_changelist' %}">admin</a> to get started.</p>
+        </div>
+    {% endfor %}
+</div>
+
+<h2 class="section-title">Recent leave records</h2>
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Employee</th>
+                <th>Type</th>
+                <th>Summary</th>
+                <th>Dates</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in recent %}
+                <tr>
+                    <td>{{ item.employee.full_name }}</td>
+                    <td><span class="badge" style="background: {{ item.leave_type.color }}">{{ item.leave_type.name }}</span></td>
+                    <td>{{ item.summary|default:'—' }}</td>
+                    <td>{{ item.start_date }} → {{ item.end_date }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="4" class="muted">Nothing documented yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

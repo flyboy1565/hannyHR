@@ -1,0 +1,6 @@
+django>=5.1,<7.0
+django-environ
+django-widget-tweaks
+gunicorn>=22.0
+whitenoise>=6.6
+psycopg[binary]>=3.1.13

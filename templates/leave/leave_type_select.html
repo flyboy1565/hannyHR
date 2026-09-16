@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Document leave · hannyHR{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <h1>Document a leave</h1>
+    <p class="muted">Select the employee and the reason for their leave. A tailored form will be generated.</p>
+</section>
+
+<form method="get" action="{% url 'leave:request_new' %}" class="card form-card">
+    <input type="hidden" name="step" value="1">
+    <div class="field">
+        <label for="employee">Employee</label>
+        <select id="employee" name="employee" required class="form-input">
+            <option value="">— Select employee —</option>
+            {% for employee in employees %}
+                <option value="{{ employee.pk }}">{{ employee.employee_id }} · {{ employee.full_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="field">
+        <label for="type">Reason for leave</label>
+        <select id="type" name="type" required class="form-input">
+            <option value="">— Select leave type —</option>
+            {% for leave_type in leave_types %}
+                <option value="{{ leave_type.pk }}">{{ leave_type.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="field">
+        <button type="submit" class="btn btn-primary">Continue</button>
+    </div>
+</form>
+{% endblock %}
