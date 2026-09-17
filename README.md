@@ -161,6 +161,23 @@ The entrypoint picks the server based on `DEBUG` in `.env`:
 
 Override workers with `GUNICORN_WORKERS` in `.env`.
 
+## Theme & appearance
+
+hannyHR ships a light theme by default and switches to **dark mode
+automatically** when your OS is set to dark (`prefers-color-scheme`), so at
+first visit you get whichever looks right for your machine — no config
+needed.
+
+- The whole palette is expressed as CSS custom properties
+  (`--bg`, `--surface`, `--text`, …) in
+  `static/css/styles.css:1`; components reference tokens, never raw hex.
+- Auto dark mode lives in a `@media (prefers-color-scheme: dark)` block
+  (`styles.css:61`). You can pin a side with the little **sun/moon** button
+  in the top bar — the choice is saved in `localStorage` and applied
+  before first paint (no flash of the wrong theme).
+- The boot snippet in `templates/base.html` reads the saved preference and
+  sets `data-theme` on `<html>` in `<head>`, before the stylesheet loads.
+
 ### Useful commands
 
 ```bash
