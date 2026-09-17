@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Employees · HR console · hannyHR{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1>Employees</h1>
+        <p class="muted">{{ employees.paginator.count|default:0 }} people on file</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'hr:employee_add' %}">Add employee</a>
+</section>
+
+<form method="get" class="filter-bar" action="{% url 'hr:employee_list' %}">
+    <div class="field">
+        <input type="text" name="q" value="{{ q }}" class="form-input" placeholder="Search name, ID or department…">
+    </div>
+    <div class="field filter-submit">
+        <button type="submit" class="btn">Search</button>
+    </div>
+</form>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Employee</th>
+                <th>ID</th>
+                <th>Department</th>
+                <th>Job title</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for employee in employees %}
+                <tr>
+                    <td>{{ employee.full_name }}</td>
+                    <td class="muted">{{ employee.employee_id }}</td>
+                    <td>{{ employee.department|default:'—' }}</td>
+                    <td>{{ employee.job_title|default:'—' }}</td>
+                    <td>
+                        {% if employee.status == 'active' %}
+                            <span class="status status-active">Active</span>
+                        {% elif employee.status == 'on_leave' %}
+                            <span class="status status-leave">On leave</span>
+                        {% else %}
+                            <span class="status status-term">Terminated</span>
+                        {% endif %}
+                    </td>
+                    <td class="td-actions">
+                        <a class="btn btn-sm" href="{% url 'hr:employee_edit' employee.pk %}">Edit</a>
+                        <a class="btn btn-sm btn-ghost" href="{% url 'hr:employee_delete' employee.pk %}">Delete</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="6" class="muted">No employees found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if is_paginated %}
+    <p class="muted small">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</p>
+{% endif %}
+{% endblock %}

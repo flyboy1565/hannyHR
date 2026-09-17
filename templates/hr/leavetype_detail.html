@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ leave_type.name }} · HR console · hannyHR{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1>
+            <span class="badge" style="background: {{ leave_type.color }}">{{ leave_type.name }}</span>
+            Documentation items
+        </h1>
+        {% if leave_type.description %}<p class="muted">{{ leave_type.description }}</p>{% endif %}
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-ghost" href="{% url 'hr:leavetype_edit' leave_type.pk %}">Edit type</a>
+        <a class="btn btn-primary" href="{% url 'hr:attribute_add' leave_type.pk %}">Add item</a>
+    </div>
+</section>
+
+<p class="muted small">
+    Items render in <strong>sort order</strong> on the leave form. Fields marked
+    <span class="req-star">*</span> are required. Attributes with a
+    <em>condition</em> only appear when their trigger value is selected.
+</p>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th style="width:40px">#</th>
+                <th>Item</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Condition</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for attribute in attributes %}
+                <tr>
+                    <td class="muted">{{ attribute.sort_order }}</td>
+                    <td>
+                        <strong>{{ attribute.label }}</strong>
+                        {% if attribute.group %}<span class="muted small"> · {{ attribute.group }}</span>{% endif %}
+                        {% if attribute.help_text %}<p class="muted small" style="margin:0">{{ attribute.help_text }}</p>{% endif %}
+                        {% if not attribute.is_active %}<span class="muted small"> (inactive)</span>{% endif %}
+                    </td>
+                    <td>{{ attribute.get_field_type_display }}</td>
+                    <td>
+                        {% if attribute.required %}
+                            <span class="req-star">Required</span>
+                        {% else %}
+                            <span class="muted">Optional</span>
+                        {% endif %}
+                    </td>
+                    <td class="small">
+                        {% if attribute.has_conditional %}
+                            if {{ attribute.condition.depends_on }} {{ attribute.condition.operator }} {{ attribute.condition.value }}
+                        {% else %}
+                            <span class="muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="td-actions">
+                        <a class="btn btn-sm" href="{% url 'hr:attribute_edit' leave_type.pk attribute.pk %}">Edit</a>
+                        <a class="btn btn-sm btn-ghost" href="{% url 'hr:attribute_delete' leave_type.pk attribute.pk %}">Delete</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="6" class="muted">No items yet. <a href="{% url 'hr:attribute_add' leave_type.pk %}">Add the first one.</a></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

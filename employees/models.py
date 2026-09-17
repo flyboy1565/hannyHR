@@ -20,6 +20,9 @@ class Employee(models.Model):
     class Meta:
         ordering = ['last_name', 'first_name']
         verbose_name_plural = 'Employees'
+        permissions = [
+            ('can_manage_hr', 'Can access the HR management console'),
+        ]
 
     def __str__(self):
         return f'{self.employee_id} — {self.full_name}'

@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'widget_tweaks',
     'employees',
     'leave',
+    'hr',
 ]
 
 MIDDLEWARE = [
