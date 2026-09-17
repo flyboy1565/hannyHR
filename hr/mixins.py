@@ -10,7 +10,7 @@ class HRConsoleMixin(LoginRequiredMixin, UserPassesTestMixin):
     and are granted the permission via the "HR Staff" group instead.
     """
 
-    login_url = 'admin:login'
+    login_url = 'hr:login'
     raise_exception = True
 
     def test_func(self):
