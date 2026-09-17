@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block title %}HR console · hannyHR{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1>HR console</h1>
+        <p class="muted">Manage employees and the leave documentation definitions. HR staff never need the Django admin.</p>
+    </div>
+</section>
+
+<div class="grid grid-3">
+    <div class="card stat-card">
+        <div class="stat-number">{{ employee_count }}</div>
+        <div class="stat-label">Employees</div>
+        <span class="muted small">{{ active_employee_count }} active</span>
+        <div class="card-actions"><a class="btn btn-sm" href="{% url 'hr:employee_list' %}">Manage employees</a></div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-number">{{ leave_type_count }}</div>
+        <div class="stat-label">Leave types</div>
+        <span class="muted small">{{ attribute_count }} total documentation items</span>
+        <div class="card-actions"><a class="btn btn-sm" href="{% url 'hr:leavetype_list' %}">Manage leave types</a></div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-number">{{ request_count }}</div>
+        <div class="stat-label">Leave records</div>
+        <span class="muted small">documented on the team</span>
+        <div class="card-actions"><a class="btn btn-sm" href="{% url 'leave:request_list' %}">View records</a></div>
+    </div>
+</div>
+
+<h2 class="section-title">Quick tasks</h2>
+<div class="grid grid-3">
+    <a class="card quick-task" href="{% url 'hr:leavetype_add' %}">
+        <strong>Create a leave type</strong>
+        <p class="card-desc">Add a new reason (e.g. Jury Duty) and its documentation items.</p>
+    </a>
+    <a class="card quick-task" href="{% url 'hr:employee_add' %}">
+        <strong>Add an employee</strong>
+        <p class="card-desc">Register a new team member so they can have leave documented.</p>
+    </a>
+    <a class="card quick-task" href="{% url 'leave:request_new' %}">
+        <strong>Document a leave</strong>
+        <p class="card-desc">Record a leave event using the dynamic form.</p>
+    </a>
+</div>
+
+<h2 class="section-title">Recent leave records</h2>
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th>Employee</th><th>Type</th><th>Dates</th></tr>
+        </thead>
+        <tbody>
+            {% for item in recent_requests %}
+                <tr>
+                    <td>{{ item.employee.full_name }}</td>
+                    <td><span class="badge" style="background: {{ item.leave_type.color }}">{{ item.leave_type.name }}</span></td>
+                    <td>{{ item.start_date }} → {{ item.end_date }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="3" class="muted">Nothing documented yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

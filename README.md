@@ -18,6 +18,11 @@ fill-out time, so the tool never hard-codes a leave reason.
 - **Required/optional items** — HR marks any item as *required* (must be completed).
 - **Conditional fields** — show/hide items based on the value of another field (e.g. "Accident report number" only appears when the injury is work-related).
 - **Validation rules** — min/max (numbers & dates), length & regex (text), max file size.
+- **HR console** (`/manage/`) — a purpose-built UI for HR staff so they never
+  touch the Django admin: employee CRUD, leave-type management, and per-type
+  documentation items (attributes + options). Gated behind the
+  `employees.can_manage_hr` permission (`is_staff` not required, so HR staff
+  get zero admin access); only superusers also see the "Admin" link.
 - **Leave record view** — read-only page listing every documented item and its value, plus uploaded attachments.
 - **Filterable request list** — filter by leave type or employee.
 - **Django admin** — full UI for managing employees, leave types, and their attributes.
@@ -224,13 +229,15 @@ docker compose exec web python manage.py test leave
 
 10 tests cover field-type mapping, validation rules, conditional required
 logic (hidden vs. visible), value save/reload round-trips, and the full
-create/edit HTTP flows.
+create/edit HTTP flows; 13 more cover the HR console (access gating, employee
+CRUD, leave-type/attribute/option create+edit+delete flows).
 
 ---
 
 ## Project layout
 
 ```
+hr/             HR console: mixins, forms, views, urls, tests
 config/            settings, URL routing
 employees/         Employee model + admin
 leave/             EAV engine: models, dynamic forms, views, admin, tests

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Leave types · HR console · hannyHR{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1>Leave types</h1>
+        <p class="muted">Reasons a team member can take leave, plus the documentation items HR must complete.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'hr:leavetype_add' %}">Create leave type</a>
+</section>
+
+<div class="grid grid-3">
+    {% for leave_type in leave_types %}
+        <div class="card">
+            <div class="card-head">
+                <span class="badge" style="background: {{ leave_type.color }}">{{ leave_type.name }}</span>
+                <span class="muted small">
+                    {{ leave_type.attribute_count }} item{{ leave_type.attribute_count|pluralize }} ·
+                    {{ leave_type.request_count }} record{{ leave_type.request_count|pluralize }}
+                </span>
+            </div>
+            {% if leave_type.description %}<p class="card-desc">{{ leave_type.description }}</p>{% endif %}
+            <div class="card-actions">
+                <a class="btn btn-sm" href="{% url 'hr:leavetype_detail' leave_type.pk %}">Items &amp; fields</a>
+                <a class="btn btn-sm btn-ghost" href="{% url 'hr:leavetype_edit' leave_type.pk %}">Edit</a>
+            </div>
+        </div>
+    {% empty %}
+        <div class="card span-full">
+            <p class="muted">No leave types yet. <a href="{% url 'hr:leavetype_add' %}">Create your first one.</a></p>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

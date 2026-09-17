@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete employee · hannyHR{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <h1>Delete employee</h1>
+</section>
+
+<div class="card callout form-card">
+    <p>Are you sure you want to delete <strong>{{ object.full_name }}</strong> ({{ object.employee_id }})?</p>
+    <p class="muted">This cannot be undone. Employees with leave records cannot be deleted.</p>
+    <form method="post" class="form-actions" action="{% url 'hr:employee_delete' object.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Delete employee</button>
+        <a class="btn btn-ghost" href="{% url 'hr:employee_list' %}">Cancel</a>
+    </form>
+</div>
+{% endblock %}

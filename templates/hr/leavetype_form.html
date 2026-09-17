@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if object.pk %}Edit{% else %}Create{% endif %} leave type · hannyHR{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1>{% if object.pk %}Edit leave type{% else %}Create leave type{% endif %}</h1>
+        <p class="muted">After creating, you'll define the documentation items (attributes) collected for it.</p>
+    </div>
+    <a class="btn btn-ghost" href="{% url 'hr:leavetype_list' %}">Back to leave types</a>
+</section>
+
+<form method="post" class="card form-card">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+        <div class="alert alert-error">{{ form.non_field_errors }}</div>
+    {% endif %}
+    {% for field in form %}
+        <div class="field">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<p class="help-text">{{ field.help_text }}</p>{% endif %}
+            {% for err in field.errors %}<p class="error-text">{{ err }}</p>{% endfor %}
+        </div>
+    {% endfor %}
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save leave type</button>
+        <a class="btn btn-ghost" href="{% url 'hr:leavetype_list' %}">Cancel</a>
+    </div>
+</form>
+{% endblock %}

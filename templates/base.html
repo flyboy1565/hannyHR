@@ -15,7 +15,10 @@
             <a href="{% url 'leave:leave_type_list' %}">Overview</a>
             <a href="{% url 'leave:request_list' %}">Leave requests</a>
             <a href="{% url 'leave:request_new' %}">Document leave</a>
-            <a href="{% url 'admin:index' %}">Admin</a>
+            <a href="{% url 'hr:dashboard' %}">HR console</a>
+            {% if user.is_superuser %}
+                <a href="{% url 'admin:index' %}">Admin</a>
+            {% endif %}
         </nav>
         <div class="topbar-user">
             {% if user.is_authenticated %}

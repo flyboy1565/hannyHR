@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if attribute.pk %}Edit{% else %}Add{% endif %} item · {{ leave_type.name }} · hannyHR{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1>
+            {% if attribute.pk %}Edit{% else %}Add{% endif %} documentation item
+        </h1>
+        <p class="muted">For leave type <span class="badge" style="background: {{ leave_type.color }}">{{ leave_type.name }}</span></p>
+    </div>
+    <a class="btn btn-ghost" href="{% url 'hr:leavetype_detail' leave_type.pk %}">Back to items</a>
+</section>
+
+<form method="post" class="card">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+        <div class="alert alert-error">{{ form.non_field_errors }}</div>
+    {% endif %}
+    {% if option_formset.non_form_errors %}
+        <div class="alert alert-error">{{ option_formset.non_form_errors }}</div>
+    {% endif %}
+
+    <div class="grid grid-2">
+        <div class="field">
+            <label for="{{ form.label.id_for_label }}">{{ form.label.label }} <span class="req-star">*</span></label>
+            {{ form.label }}
+            {% for err in form.label.errors %}<p class="error-text">{{ err }}</p>{% endfor %}
+        </div>
+        <div class="field">
+            <label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+            {{ form.name }}
+            {% if form.name.help_text %}<p class="help-text">{{ form.name.help_text }}</p>{% endif %}
+            {% for err in form.name.errors %}<p class="error-text">{{ err }}</p>{% endfor %}
+        </div>
+        <div class="field">
+            <label for="{{ form.field_type.id_for_label }}">{{ form.field_type.label }}</label>
+            {{ form.field_type }}
+            {% for err in form.field_type.errors %}<p class="error-text">{{ err }}</p>{% endfor %}
+        </div>
+        <div class="field">
+            <label for="{{ form.sort_order.id_for_label }}">{{ form.sort_order.label }}</label>
+            {{ form.sort_order }}
+            {% if form.sort_order.help_text %}<p class="help-text">{{ form.sort_order.help_text }}</p>{% endif %}
+        </div>
+        <div class="field">
+            <label for="{{ form.group.id_for_label }}">{{ form.group.label }}</label>
+            {{ form.group }}
+            {% if form.group.help_text %}<p class="help-text">{{ form.group.help_text }}</p>{% endif %}
+        </div>
+        <div class="field">
+            <div class="checkbox-wrap" style="margin-top:1.4rem">
+                {{ form.required }}
+                <span class="checkbox-label"><strong>{{ form.required.label }}</strong> — add a <span class="req-star">*</span> to the form so it must be completed.</span>
+            </div>
+            {% for err in form.required.errors %}<p class="error-text">{{ err }}</p>{% endfor %}
+        </div>
+        <div class="field field-wide">
+            <label for="{{ form.help_text.id_for_label }}">{{ form.help_text.label }}</label>
+            {{ form.help_text }}
+        </div>
+        <div class="field">
+            <label for="{{ form.placeholder.id_for_label }}">{{ form.placeholder.label }}</label>
+            {{ form.placeholder }}
+        </div>
+        <div class="field">
+            <label for="{{ form.default_value.id_for_label }}">{{ form.default_value.label }}</label>
+            {{ form.default_value }}
+        </div>
+        <div class="field field-wide">
+            <label for="{{ form.validation_rules.id_for_label }}">{{ form.validation_rules.label }}</label>
+            {{ form.validation_rules }}
+            {% if form.validation_rules.help_text %}<p class="help-text">{{ form.validation_rules.help_text }}</p>{% endif %}
+            {% for err in form.validation_rules.errors %}<p class="error-text">{{ err }}</p>{% endfor %}
+        </div>
+        <div class="field field-wide">
+            <label for="{{ form.condition.id_for_label }}">{{ form.condition.label }}</label>
+            {{ form.condition }}
+            {% if form.condition.help_text %}<p class="help-text">{{ form.condition.help_text }}</p>{% endif %}
+            {% for err in form.condition.errors %}<p class="error-text">{{ err }}</p>{% endfor %}
+        </div>
+        <div class="field">
+            <div class="checkbox-wrap">
+                {{ form.is_active }}
+                <span class="checkbox-label"><strong>Active</strong> — inactive items are excluded from new forms.</span>
+            </div>
+        </div>
+    </div>
+
+    <section class="form-section">
+        <h2 class="section-title">Selectable options</h2>
+        <p class="muted small">Only used for <strong>Dropdown</strong> and <strong>Multiple choice</strong> field types. The value is stored; the label is what HR sees.</p>
+        {{ option_formset.management_form }}
+        <table id="options-table">
+            <thead>
+                <tr><th>Label</th><th>Value</th><th style="width:90px">Order</th><th style="width:60px">Delete</th></tr>
+            </thead>
+            <tbody>
+                {% for option_form in option_formset.forms %}
+                    <tr class="option-row">
+                        <td>
+                            {{ option_form.id }}
+                            {{ option_form.label }}
+                            {% for err in option_form.label.errors %}<p class="error-text">{{ err }}</p>{% endfor %}
+                        </td>
+                        <td>
+                            {{ option_form.value }}
+                            {% for err in option_form.value.errors %}<p class="error-text">{{ err }}</p>{% endfor %}
+                        </td>
+                        <td>{{ option_form.sort_order }}</td>
+                        <td class="center">{{ option_form.DELETE }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save item</button>
+        <a class="btn btn-ghost" href="{% url 'hr:leavetype_detail' leave_type.pk %}">Cancel</a>
+    </div>
+</form>
+{% endblock %}

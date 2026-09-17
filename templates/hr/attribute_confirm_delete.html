@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete item · {{ leave_type.name }} · hannyHR{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <h1>Delete documentation item</h1>
+</section>
+
+<div class="card callout form-card">
+    <p>Are you sure you want to delete <strong>{{ attribute.label }}</strong>?
+       {% if attribute.options.all %}Its {{ attribute.options.count }} option{{ attribute.options.count|pluralize }} will also be deleted.{% endif %}</p>
+    <p class="muted">Existing leave records already documented with this item are <strong>not</strong> affected.</p>
+    <form method="post" class="form-actions" action="{% url 'hr:attribute_delete' leave_type.pk attribute.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Delete item</button>
+        <a class="btn btn-ghost" href="{% url 'hr:leavetype_detail' leave_type.pk %}">Cancel</a>
+    </form>
+</div>
+{% endblock %}

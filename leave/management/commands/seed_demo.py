@@ -1,35 +1,97 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group, Permission, User
 
 from employees.models import Employee
-from leave.models import LeaveAttrOption, LeaveAttribute, LeaveType
+from leave.models import (
+    LeaveAttrOption,
+    LeaveAttribute,
+    LeaveAttributeValue,
+    LeaveRequest,
+    LeaveType,
+)
 
 
 class Command(BaseCommand):
     help = 'Seed demo leave types, attributes, and sample employees.'
 
     def handle(self, *args, **options):
-        User = get_user_model()
-        if not User.objects.filter(username='hr').exists():
-            User.objects.create_superuser('hr', 'hr@example.com', 'hannyhr123')
+        UserModel = get_user_model()
+        if not UserModel.objects.filter(username='hr').exists():
+            UserModel.objects.create_superuser('hr', 'hr@example.com', 'hannyhr123')
+
+        group, _ = Group.objects.get_or_create(name='HR Staff')
+        group.permissions.add(
+            Permission.objects.get(codename='can_manage_hr')
+        )
+        group.permissions.add(
+            Permission.objects.get(codename='add_leaverequest')
+        )
+        if not UserModel.objects.filter(username='hr.ops').exists():
+            ops = UserModel.objects.create_user(
+                'hr.ops', 'hr.ops@example.com', 'hroperations123'
+            )
+            ops.groups.add(group)
 
         employees = [
-            {
-                'employee_id': 'EMP-1001', 'first_name': 'Alice', 'last_name': 'Moyo',
-                'department': 'Engineering', 'job_title': 'Backend Engineer',
-            },
-            {
-                'employee_id': 'EMP-1002', 'first_name': 'Ben', 'last_name': 'Kariuki',
-                'department': 'Design', 'job_title': 'Product Designer',
-            },
-            {
-                'employee_id': 'EMP-1003', 'first_name': 'Clara', 'last_name': 'Okafor',
-                'department': 'Finance', 'job_title': 'Accountant',
-            },
-            {
-                'employee_id': 'EMP-1004', 'first_name': 'David', 'last_name': 'Zulu',
-                'department': 'Engineering', 'job_title': 'Frontend Engineer',
-            },
+            # Engineering
+            {'employee_id': 'EMP-1001', 'first_name': 'Alice', 'last_name': 'Moyo',
+             'department': 'Engineering', 'job_title': 'Backend Engineer'},
+            {'employee_id': 'EMP-1002', 'first_name': 'Ben', 'last_name': 'Kariuki',
+             'department': 'Engineering', 'job_title': 'Product Designer'},
+            {'employee_id': 'EMP-1003', 'first_name': 'Clara', 'last_name': 'Okafor',
+             'department': 'Engineering', 'job_title': 'DevOps Engineer'},
+            {'employee_id': 'EMP-1004', 'first_name': 'David', 'last_name': 'Zulu',
+             'department': 'Engineering', 'job_title': 'Frontend Engineer'},
+            {'employee_id': 'EMP-1005', 'first_name': 'Esther', 'last_name': 'Nwosu',
+             'department': 'Engineering', 'job_title': 'Data Engineer'},
+            {'employee_id': 'EMP-1006', 'first_name': 'Frank', 'last_name': 'Adeyemi',
+             'department': 'Engineering', 'job_title': 'DevOps Engineer'},
+            # Design
+            {'employee_id': 'EMP-1007', 'first_name': 'Grace', 'last_name': 'Banda',
+             'department': 'Design', 'job_title': 'Brand Designer'},
+            {'employee_id': 'EMP-1008', 'first_name': 'Henry', 'last_name': 'Mwangi',
+             'department': 'Design', 'job_title': 'Product Designer'},
+            {'employee_id': 'EMP-1009', 'first_name': 'Imani', 'last_name': 'Osei',
+             'department': 'Design', 'job_title': 'UX Designer'},
+            {'employee_id': 'EMP-1010', 'first_name': 'James', 'last_name': 'Diallo',
+             'department': 'Design', 'job_title': 'Design Lead'},
+            # Product / Data
+            {'employee_id': 'EMP-1012', 'first_name': 'Kevin', 'last_name': 'Ondiek',
+             'department': 'Product', 'job_title': 'Product Manager'},
+            {'employee_id': 'EMP-1013', 'first_name': 'Linda', 'last_name': 'Chikwanda',
+             'department': 'Product', 'job_title': 'Associate Product Manager'},
+            {'employee_id': 'EMP-1017', 'first_name': 'Priya', 'last_name': 'Nair',
+             'department': 'Data', 'job_title': 'Data Analyst'},
+            {'employee_id': 'EMP-1018', 'first_name': 'Quinn', 'last_name': 'Adeola',
+             'department': 'Data', 'job_title': 'ML Engineer'},
+            # Finance / People Ops
+            {'employee_id': 'EMP-1019', 'first_name': 'Rachel', 'last_name': 'Zimba',
+             'department': 'Finance', 'job_title': 'Finance Manager'},
+            {'employee_id': 'EMP-1020', 'first_name': 'Samuel', 'last_name': 'Ochieng',
+             'department': 'Finance', 'job_title': 'Payroll Specialist'},
+            {'employee_id': 'EMP-1021', 'first_name': 'Tina', 'last_name': 'Falana',
+             'department': 'People Ops', 'job_title': 'HR Business Partner'},
+            {'employee_id': 'EMP-1022', 'first_name': 'Usman', 'last_name': 'Garba',
+             'department': 'People Ops', 'job_title': 'Recruiter'},
+            # Sales / Marketing / Support
+            {'employee_id': 'EMP-1023', 'first_name': 'Vera', 'last_name': 'Kiprop',
+             'department': 'Sales', 'job_title': 'Account Executive'},
+            {'employee_id': 'EMP-1024', 'first_name': 'William', 'last_name': 'Otieno',
+             'department': 'Sales', 'job_title': 'Sales Manager'},
+            {'employee_id': 'EMP-1025', 'first_name': 'Ximena', 'last_name': 'Rojas',
+             'department': 'Marketing', 'job_title': 'Marketing Associate'},
+            {'employee_id': 'EMP-1026', 'first_name': 'Yusuf', 'last_name': 'Ali',
+             'department': 'Marketing', 'job_title': 'Social Media Manager'},
+            {'employee_id': 'EMP-1027', 'first_name': 'Zoe', 'last_name': 'Hassan',
+             'department': 'Support', 'job_title': 'Support Engineer'},
+            {'employee_id': 'EMP-1028', 'first_name': 'Adam', 'last_name': 'Kamau',
+             'department': 'Support', 'job_title': 'Customer Success Manager'},
+            # Operations / Leadership
+            {'employee_id': 'EMP-1029', 'first_name': 'Brenda', 'last_name': 'Musoke',
+             'department': 'Operations', 'job_title': 'Operations Manager'},
+            {'employee_id': 'EMP-1030', 'first_name': 'Caleb', 'last_name': 'Njoroge',
+             'department': 'Leadership', 'job_title': 'Head of Engineering'},
         ]
         for data in employees:
             Employee.objects.get_or_create(employee_id=data['employee_id'], defaults=data)
@@ -38,18 +100,81 @@ class Command(BaseCommand):
         self.seed_maternity()
         self.seed_paternity()
         self.seed_bereavement()
+        self.seed_leaves()
         self.stdout.write(self.style.SUCCESS('Demo data seeded.'))
 
-    def _type(self, name, slug, description, color):
-        obj, _ = LeaveType.objects.get_or_create(
-            slug=slug,
-            defaults={
-                'name': name,
-                'description': description,
-                'color': color,
-            },
+    def seed_leaves(self):
+        """Seed a handful of previous, completed leave records."""
+        hr_user = User.objects.get(username='hr')
+        self._leaf('EMP-1001', 'injury', 'Fell while cycling — broken right wrist.',
+                   '2026-03-02', '2026-03-06',
+                   values=[
+                       ('injury_type', 'work_related'),
+                       ('injury_occurred_at', '2026-03-02'),
+                       ('body_part', 'Right wrist'),
+                       ('severity', 'severe'),
+                       ('workplace_accident_report', 'true'),
+                       ('report_number', 'ACC-2026-014'),
+                   ])
+        self._leaf('EMP-1002', 'injury', 'Sprained ankle at home over the weekend.',
+                   '2026-02-09', '2026-02-11',
+                   values=[
+                       ('injury_type', 'home'),
+                       ('injury_occurred_at', '2026-02-07'),
+                       ('body_part', 'Left ankle'),
+                       ('severity', 'moderate'),
+                   ])
+        self._leaf('EMP-1017', 'maternity', 'Maternity leave around birth of first child.',
+                   '2026-01-05', '2026-04-10',
+                   values=[
+                       ('due_date', '2026-02-01'),
+                       ('baby_born_at', '2026-01-28'),
+                       ('recovery_notes', 'Recovered well; cleared to return.'),
+                   ])
+        self._leaf('EMP-1003', 'paternity', 'Paternity leave for birth of daughter.',
+                   '2026-06-15', '2026-06-19',
+                   values=[
+                       ('birth_date', '2026-06-14'),
+                       ('relationship', 'biological'),
+                       ('bonding_notes', 'Huge help around the house.'),
+                   ])
+        self._leaf('EMP-1004', 'death_in_family', 'Bereavement — loss of mother.',
+                   '2026-07-20', '2026-07-24',
+                   values=[
+                       ('deceased_name', 'Mary Zulu'),
+                       ('relationship', 'parent'),
+                       ('funeral_date', '2026-07-23'),
+                   ])
+        self._leaf('EMP-1005', 'injury', 'Sports injury — dislocated shoulder.',
+                   '2026-05-04', '2026-05-08',
+                   values=[
+                       ('injury_type', 'sports'),
+                       ('injury_occurred_at', '2026-05-03'),
+                       ('body_part', 'Left shoulder'),
+                       ('severity', 'severe'),
+                   ])
+
+    def _leaf(self, employee_id, type_slug, summary, start_date, end_date, values,
+              status='completed'):
+        employee = Employee.objects.get(employee_id=employee_id)
+        leave_type = LeaveType.objects.get(slug=type_slug)
+        request, created = LeaveRequest.objects.get_or_create(
+            employee=employee, leave_type=leave_type,
+            summary=summary, start_date=start_date,
+            defaults={'end_date': end_date, 'status': status,
+                      'created_by': User.objects.get(username='hr')},
         )
-        # Refresh the display name if it changed on a rerun.
+        for attr_name, text in values:
+            attr = leave_type.attributes.get(name=attr_name)
+            LeaveAttributeValue.objects.get_or_create(
+                request=request, attribute=attr, defaults={'value_text': text},
+            )
+
+    def _type(self, name, slug, description, color):
+        obj, created = LeaveType.objects.get_or_create(
+            slug=slug,
+            defaults={'name': name, 'description': description, 'color': color},
+        )
         LeaveType.objects.filter(pk=obj.pk).update(name=name, color=color)
         return obj
 
@@ -73,7 +198,6 @@ class Command(BaseCommand):
             for key, value in defaults.items():
                 setattr(attr, key, value)
             attr.save()
-        # Clear existing options so reruns converge on the seeded set.
         if options is not None:
             attr.options.all().delete()
             for sort, (opt_label, opt_value) in enumerate(options):
