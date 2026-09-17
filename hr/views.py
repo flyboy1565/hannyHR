@@ -1,3 +1,5 @@
+from django.contrib.auth.views import LoginView, LogoutView
+
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.db.models.deletion import ProtectedError
@@ -16,6 +18,7 @@ from leave.models import LeaveAttribute, LeaveRequest, LeaveType
 
 from .forms import (
     EmployeeForm,
+    HRAuthenticationForm,
     LeaveAttrOptionFormSet,
     LeaveAttributeForm,
     LeaveTypeForm,
@@ -243,3 +246,30 @@ def attribute_delete(request, leave_type_pk, attribute_pk):
         'leave_type': leave_type,
         'attribute': attribute,
     })
+
+
+class HRLoginView(LoginView):
+    """Purpose-built HR sign-in at /manage/login/.
+
+    Authenticates through :class:`HRAuthenticationForm` so only accounts that
+    can actually operate the console (superuser or ``can_manage_hr``) get in.
+    A successful login lands on the HR dashboard (or the ``?next=`` target),
+    never on Django admin. Already-signed-in users are bounced straight to the
+    dashboard.
+    """
+
+    template_name = 'hr/login.html'
+    authentication_form = HRAuthenticationForm
+    redirect_authenticated_user = True
+
+    def get_success_url(self):
+        url = super().get_success_url()
+        if url:
+            return url
+        return reverse_lazy('hr:dashboard')
+
+
+class HRLogoutView(LogoutView):
+    """End the HR session and return to the (reusable) HR sign-in page."""
+
+    next_page = reverse_lazy('hr:login')

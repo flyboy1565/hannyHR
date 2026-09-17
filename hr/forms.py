@@ -1,6 +1,7 @@
 import json
 
 from django import forms
+from django.contrib.auth.forms import AuthenticationForm
 from django.utils.text import slugify
 
 from employees.models import Employee
@@ -168,3 +169,36 @@ LeaveAttrOptionFormSet = forms.inlineformset_factory(
     can_delete=True,
     min_num=0,
 )
+
+
+class HRAuthenticationForm(AuthenticationForm):
+    """Sign in to the HR console without ever touching Django admin.
+
+    Accepts any active, non-disabled user who is a superuser or holds the
+    ``employees.can_manage_hr`` permission — i.e. exactly the same rule the
+    HR console itself enforces. Everyone else is refused with a clear message
+    even though their password is correct.
+    """
+
+    username = forms.CharField(
+        widget=forms.TextInput(attrs={'class': 'form-input', 'autofocus': True}),
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-input'}),
+    )
+
+    error_messages = {
+        **AuthenticationForm.error_messages,
+        'hr_access_denied': (
+            'Your account cannot access the HR console. HR access requires '
+            'the "can manage HR" permission — contact a system administrator.'
+        ),
+    }
+
+    def confirm_login_allowed(self, user):
+        super().confirm_login_allowed(user)
+        if not (user.is_superuser or user.has_perm('employees.can_manage_hr')):
+            raise forms.ValidationError(
+                self.error_messages['hr_access_denied'],
+                code='hr_access_denied',
+            )

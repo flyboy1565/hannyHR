@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign in · hannyHR{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+    <div class="card auth-card">
+        <h1>Sign in</h1>
+        <p class="muted">Access the HR console.</p>
+
+        <form method="post" class="form-card">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="alert alert-error">{{ form.non_field_errors }}</div>
+            {% endif %}
+            {% for field in form %}
+                <div class="field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% for err in field.errors %}<p class="error-text">{{ err }}</p>{% endfor %}
+                </div>
+            {% endfor %}
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Sign in</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

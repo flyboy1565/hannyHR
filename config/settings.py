@@ -130,5 +130,5 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-LOGIN_URL = 'admin:login'
-LOGIN_REDIRECT_URL = 'leave:leave_type_list'
+LOGIN_URL = 'hr:login'
+LOGIN_REDIRECT_URL = 'hr:dashboard'

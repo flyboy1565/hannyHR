@@ -32,4 +32,7 @@ urlpatterns = [
         views.attribute_delete,
         name='attribute_delete',
     ),
+
+    path('login/', views.HRLoginView.as_view(), name='login'),
+    path('logout/', views.HRLogoutView.as_view(), name='logout'),
 ]

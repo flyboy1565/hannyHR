@@ -8,6 +8,70 @@ from leave.models import LeaveAttrOption, LeaveAttribute, LeaveRequest, LeaveTyp
 User = get_user_model()
 
 
+def _hr_user():
+    from django.contrib.auth.models import Permission
+    user = User.objects.create_user('ops', 'ops@example.com', 'pw')
+    user.user_permissions.add(
+        Permission.objects.get(codename='can_manage_hr')
+    )
+    return user
+
+
+class HRAuthenticationTests(TestCase):
+    def test_login_page_renders(self):
+        response = self.client.get(reverse('hr:login'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Sign in')
+
+    def test_hr_user_can_sign_in(self):
+        _hr_user()
+        response = self.client.post(reverse('hr:login'), {
+            'username': 'ops', 'password': 'pw',
+        })
+        self.assertRedirects(response, reverse('hr:dashboard'))
+        self.assertTrue(
+            self.client.session['_auth_user_id'],
+            'HR user should be authenticated after sign in',
+        )
+
+    def test_sign_in_honours_next(self):
+        _hr_user()
+        response = self.client.post(
+            reverse('hr:login'),
+            {'username': 'ops', 'password': 'pw', 'next': reverse('hr:employee_list')},
+        )
+        self.assertRedirects(response, reverse('hr:employee_list'))
+
+    def test_plain_user_refused_despite_correct_password(self):
+        User.objects.create_user('regular', 'r@example.com', 'pw')
+        response = self.client.post(reverse('hr:login'), {
+            'username': 'regular', 'password': 'pw',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'cannot access the HR console')
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_superuser_can_sign_in(self):
+        User.objects.create_superuser('boss', 'boss@example.com', 'pw')
+        response = self.client.post(reverse('hr:login'), {
+            'username': 'boss', 'password': 'pw',
+        })
+        self.assertRedirects(response, reverse('hr:dashboard'))
+
+    def test_authenticated_user_skips_login_page(self):
+        _hr_user()
+        self.client.login(username='ops', password='pw')
+        response = self.client.get(reverse('hr:login'))
+        self.assertRedirects(response, reverse('hr:dashboard'))
+
+    def test_logout_returns_to_login(self):
+        _hr_user()
+        self.client.login(username='ops', password='pw')
+        response = self.client.post(reverse('hr:logout'))
+        self.assertRedirects(response, reverse('hr:login'))
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+
 class HRConsoleAccessTests(TestCase):
     def test_anonymous_redirected_to_login(self):
         url = reverse('hr:dashboard')
