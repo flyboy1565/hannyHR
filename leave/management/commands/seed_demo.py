@@ -131,6 +131,10 @@ class Command(BaseCommand):
              'department': 'Leadership', 'job_title': 'Head of Engineering'},
             {'employee_id': 'EMP-1031', 'first_name': 'Thandi', 'last_name': 'Ndlovu',
              'department': 'HR', 'job_title': 'HR Operations'},
+            {'employee_id': 'EMP-1032', 'first_name': 'Sipho', 'last_name': 'Dlamini',
+             'department': 'HR', 'job_title': 'HR Director'},
+            {'employee_id': 'EMP-1033', 'first_name': 'Naledi', 'last_name': 'Mokoena',
+             'department': 'HR', 'job_title': 'HR Supervisor'},
         ]
         for data in employees:
             Employee.objects.get_or_create(employee_id=data['employee_id'], defaults=data)
@@ -149,6 +153,20 @@ class Command(BaseCommand):
         if not ops_emp.user:
             ops_emp.user = ops
             ops_emp.save()
+
+        # Link hr (superuser) to their employee record
+        hr_user = UserModel.objects.get(username='hr')
+        hr_emp = Employee.objects.get(employee_id='EMP-1032')
+        if not hr_emp.user:
+            hr_emp.user = hr_user
+            hr_emp.save()
+
+        # Link hr.supervisor to their employee record
+        supervisor = UserModel.objects.get(username='hr.supervisor')
+        sup_emp = Employee.objects.get(employee_id='EMP-1033')
+        if not sup_emp.user:
+            sup_emp.user = supervisor
+            sup_emp.save()
 
         self.seed_injury()
         self.seed_maternity()
@@ -213,6 +231,13 @@ class Command(BaseCommand):
                        ('deceased_name', 'Nokuthula Ndlovu'),
                        ('relationship', 'grandparent'),
                        ('funeral_date', '2026-04-17'),
+                   ])
+        self._leaf('EMP-1033', 'paternity', 'Paternity leave for birth of first child.',
+                   '2026-08-04', '2026-08-08',
+                   values=[
+                       ('birth_date', '2026-08-03'),
+                       ('relationship', 'biological'),
+                       ('bonding_notes', 'Settling in nicely at home.'),
                    ])
 
     def _leaf(self, employee_id, type_slug, summary, start_date, end_date, values,
