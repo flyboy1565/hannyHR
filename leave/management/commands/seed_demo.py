@@ -129,6 +129,8 @@ class Command(BaseCommand):
              'department': 'Operations', 'job_title': 'Operations Manager'},
             {'employee_id': 'EMP-1030', 'first_name': 'Caleb', 'last_name': 'Njoroge',
              'department': 'Leadership', 'job_title': 'Head of Engineering'},
+            {'employee_id': 'EMP-1031', 'first_name': 'Thandi', 'last_name': 'Ndlovu',
+             'department': 'HR', 'job_title': 'HR Operations'},
         ]
         for data in employees:
             Employee.objects.get_or_create(employee_id=data['employee_id'], defaults=data)
@@ -141,6 +143,12 @@ class Command(BaseCommand):
         # Give Alice portal access so she can see her own leave data
         portal_perm = Permission.objects.get(codename='can_view_team_portal')
         alice.user_permissions.add(portal_perm)
+
+        # Link hr.ops to their employee record
+        ops_emp = Employee.objects.get(employee_id='EMP-1031')
+        if not ops_emp.user:
+            ops_emp.user = ops
+            ops_emp.save()
 
         self.seed_injury()
         self.seed_maternity()
@@ -198,6 +206,13 @@ class Command(BaseCommand):
                        ('injury_occurred_at', '2026-05-03'),
                        ('body_part', 'Left shoulder'),
                        ('severity', 'severe'),
+                   ])
+        self._leaf('EMP-1031', 'death_in_family', 'Loss of grandmother — family obligations.',
+                   '2026-04-14', '2026-04-18',
+                   values=[
+                       ('deceased_name', 'Nokuthula Ndlovu'),
+                       ('relationship', 'grandparent'),
+                       ('funeral_date', '2026-04-17'),
                    ])
 
     def _leaf(self, employee_id, type_slug, summary, start_date, end_date, values,
