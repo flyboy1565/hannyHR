@@ -19,6 +19,11 @@ class Command(BaseCommand):
         UserModel = get_user_model()
         if not UserModel.objects.filter(username='hr').exists():
             UserModel.objects.create_superuser('hr', 'hr@example.com', 'hannyhr123')
+        # Ensure hr has no Django admin access
+        hr_user = UserModel.objects.get(username='hr')
+        if hr_user.is_staff:
+            hr_user.is_staff = False
+            hr_user.save()
 
         # Create groups
         supervisor_group, _ = Group.objects.get_or_create(name='HR Supervisor')
@@ -34,20 +39,20 @@ class Command(BaseCommand):
         )
         supervisor_group.permissions.set(supervisor_perms)
 
-        # Team Member permissions: can_view_team_portal, leave CRUD
+        # Team Member permissions: can_view_team_portal, read-only leave access
         team_member_perms = Permission.objects.filter(
             codename__in=[
                 'can_view_team_portal',
-                'add_leaverequest', 'view_leaverequest', 'change_leaverequest',
+                'view_leaverequest',
             ]
         )
         team_member_group.permissions.set(team_member_perms)
 
-        # IT permissions: Django admin only, portal for own leaves
+        # IT permissions: Django admin, portal for own leaves, read-only leave access
         it_perms = Permission.objects.filter(
             codename__in=[
                 'can_view_team_portal',
-                'add_leaverequest', 'view_leaverequest', 'change_leaverequest',
+                'view_leaverequest',
             ]
         )
         it_group.permissions.set(it_perms)
