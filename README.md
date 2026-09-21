@@ -1,4 +1,4 @@
-# hannyHR
+  # hannyHR
 
 An HR documentation tool for recording **why** team members took leave. Uses the
 [EAV (Entity–Attribute–Value)](https://en.wikipedia.org/wiki/Entity%E2%80%93attribute%E2%80%93value_model)
@@ -26,9 +26,10 @@ fill-out time, so the tool never hard-codes a leave reason.
 - **HR login/logout** (`/manage/login/`, `/manage/logout/`) — purpose-built
   authentication for the HR console; only accounts with the `can_manage_hr`
   permission (or superusers) can sign in.
-- **Role hierarchy** — two HR groups control access:
+- **Role hierarchy** — three groups control access:
   - **HR Supervisor** — full console access + ability to impersonate any non-superuser via django-hijack.
   - **HR Team Member** — can document leave and view their own team portal.
+  - **IT** — Django admin access only; can view their own team portal.
 - **User impersonation** (`django-hijack`) — supervisors can "View as" any
   employee from the employee list. A yellow banner shows who you're
   impersonating, with a one-click release button.
@@ -88,11 +89,13 @@ LeaveRequest ──1──*── LeaveAttributeValue
 
 | Group | Permissions |
 |---|---|
-| **HR Supervisor** | `can_manage_hr`, `can_hijack_users`, `can_view_team_portal`, leave CRUD |
-| **HR Team Member** | `can_view_team_portal`, leave CRUD |
+| **HR Supervisor** | `can_manage_hr`, `can_hijack_users`, `can_view_team_portal`, `add_leaverequest`, `view_leaverequest`, `change_leaverequest` |
+| **HR Team Member** | `can_view_team_portal`, `add_leaverequest`, `view_leaverequest` |
+| **IT** | `can_view_team_portal`, `view_leaverequest` |
 
 Superusers bypass all checks and can access everything (console, admin,
-impersonation, portal).
+impersonation, portal). The `hr` superuser has `is_staff=False` so no admin
+link is shown in the nav.
 
 ### User impersonation
 
@@ -183,11 +186,40 @@ docker compose exec web python manage.py seed_demo
 
 This creates:
 
-- **Superuser** `hr / hannyhr123` — full admin + console access
-- **HR Supervisor** `hr.supervisor / supervisor123` — console + impersonation
-- **HR Team Member** `hr.ops / hroperations123` — console + team portal
-- **Regular employee** `alice / alice123` — linked to EMP-1001 (Alice Moyo)
-- Sample employees, four leave types with realistic attributes and conditional logic
+### Demo accounts
+
+| Account | Password | Role | Employee |
+|---|---|---|---|
+| `hr` | `hannyhr123` | Superuser | EMP-1032 — Sipho Dlamini |
+| `hr.supervisor` | `supervisor123` | HR Supervisor | EMP-1033 — Naledi Mokoena |
+| `hr.ops` | `hroperations123` | HR Team Member | EMP-1031 — Thandi Ndlovu |
+| `it.admin` | `itadmin123` | IT | EMP-1034 — Kagiso Motlhabane |
+| `alice` | `alice123` | Regular employee | EMP-1001 — Alice Moyo |
+
+### Role permissions
+
+| Capability | `hr` | `hr.supervisor` | `hr.ops` | `it.admin` | `alice` |
+|---|:---:|:---:|:---:|:---:|:---:|
+| Django admin (`/admin/`) | - | - | - | ✅ | - |
+| HR console (`/manage/`) | ✅ | ✅ | - | - | - |
+| Overview (leave types) | ✅ | ✅ | - | - | - |
+| Create / edit leave types | ✅ | ✅ | - | - | - |
+| Document leave (`/new/`) | ✅ | ✅ | ✅ | - | - |
+| Leave requests list | ✅ | ✅ | ✅ | - | - |
+| Employee list + "View as" | ✅ | ✅ | - | - | - |
+| Audit log | ✅ | ✅ | - | - | - |
+| Team portal (`/my-portal/`) | ✅ | ✅ | ✅ | ✅ | ✅ |
+| User impersonation (hijack) | ✅ | ✅ | - | - | - |
+
+- **`hr`** is a Django superuser with `is_staff=False` (no admin link shown, but
+  passes all permission checks). Has an employee record so the portal works.
+- **`hr.supervisor`** belongs to the **HR Supervisor** group — full console
+  access, can impersonate any non-superuser.
+- **`hr.ops`** belongs to the **HR Team Member** group — can document leave
+  and view their own portal, but cannot manage leave types or employees.
+- **`it.admin`** belongs to the **IT** group — has `is_staff=True` for Django
+  admin access, but no HR console access. Can view their own portal.
+- **`alice`** is a plain user — portal access only (linked to EMP-1001).
 
 Log in at **http://localhost:8050**:
 
