@@ -23,6 +23,7 @@ class Command(BaseCommand):
         # Create groups
         supervisor_group, _ = Group.objects.get_or_create(name='HR Supervisor')
         team_member_group, _ = Group.objects.get_or_create(name='HR Team Member')
+        it_group, _ = Group.objects.get_or_create(name='IT')
 
         # Supervisor permissions: can_manage_hr, can_hijack_users, leave CRUD
         supervisor_perms = Permission.objects.filter(
@@ -41,6 +42,15 @@ class Command(BaseCommand):
             ]
         )
         team_member_group.permissions.set(team_member_perms)
+
+        # IT permissions: Django admin only, portal for own leaves
+        it_perms = Permission.objects.filter(
+            codename__in=[
+                'can_view_team_portal',
+                'add_leaverequest', 'view_leaverequest', 'change_leaverequest',
+            ]
+        )
+        it_group.permissions.set(it_perms)
 
         # HR Supervisor user: hr.supervisor / supervisor123
         if not UserModel.objects.filter(username='hr.supervisor').exists():
@@ -61,6 +71,19 @@ class Command(BaseCommand):
         else:
             ops = UserModel.objects.get(username='hr.ops')
             ops.groups.add(team_member_group)
+
+        # IT user: it.admin / itadmin123 (Django admin, no HR console)
+        if not UserModel.objects.filter(username='it.admin').exists():
+            it_user = UserModel.objects.create_user(
+                'it.admin', 'it.admin@example.com', 'itadmin123',
+                is_staff=True,
+            )
+            it_user.groups.add(it_group)
+        else:
+            it_user = UserModel.objects.get(username='it.admin')
+            it_user.is_staff = True
+            it_user.save()
+            it_user.groups.add(it_group)
 
         # Regular employee user: alice / alice123
         if not UserModel.objects.filter(username='alice').exists():
@@ -135,6 +158,8 @@ class Command(BaseCommand):
              'department': 'HR', 'job_title': 'HR Director'},
             {'employee_id': 'EMP-1033', 'first_name': 'Naledi', 'last_name': 'Mokoena',
              'department': 'HR', 'job_title': 'HR Supervisor'},
+            {'employee_id': 'EMP-1034', 'first_name': 'Kagiso', 'last_name': 'Motlhabane',
+             'department': 'IT', 'job_title': 'Systems Administrator'},
         ]
         for data in employees:
             Employee.objects.get_or_create(employee_id=data['employee_id'], defaults=data)
@@ -167,6 +192,13 @@ class Command(BaseCommand):
         if not sup_emp.user:
             sup_emp.user = supervisor
             sup_emp.save()
+
+        # Link it.admin to their employee record
+        it_user = UserModel.objects.get(username='it.admin')
+        it_emp = Employee.objects.get(employee_id='EMP-1034')
+        if not it_emp.user:
+            it_emp.user = it_user
+            it_emp.save()
 
         self.seed_injury()
         self.seed_maternity()
@@ -238,6 +270,16 @@ class Command(BaseCommand):
                        ('birth_date', '2026-08-03'),
                        ('relationship', 'biological'),
                        ('bonding_notes', 'Settling in nicely at home.'),
+                   ])
+        self._leaf('EMP-1034', 'injury', 'Back strain from lifting server equipment.',
+                   '2026-06-22', '2026-06-24',
+                   values=[
+                       ('injury_type', 'work_related'),
+                       ('injury_occurred_at', '2026-06-21'),
+                       ('body_part', 'Lower back'),
+                       ('severity', 'moderate'),
+                       ('workplace_accident_report', 'true'),
+                       ('report_number', 'ACC-2026-019'),
                    ])
 
     def _leaf(self, employee_id, type_slug, summary, start_date, end_date, values,
