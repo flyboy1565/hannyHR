@@ -138,6 +138,9 @@ class Command(BaseCommand):
         if not alice_emp.user:
             alice_emp.user = alice
             alice_emp.save()
+        # Give Alice portal access so she can see her own leave data
+        portal_perm = Permission.objects.get(codename='can_view_team_portal')
+        alice.user_permissions.add(portal_perm)
 
         self.seed_injury()
         self.seed_maternity()

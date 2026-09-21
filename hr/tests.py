@@ -28,7 +28,7 @@ class HRAuthenticationTests(TestCase):
         response = self.client.post(reverse('hr:login'), {
             'username': 'ops', 'password': 'pw',
         })
-        self.assertRedirects(response, reverse('hr:dashboard'))
+        self.assertRedirects(response, reverse('hr:team_portal'))
         self.assertTrue(
             self.client.session['_auth_user_id'],
             'HR user should be authenticated after sign in',
@@ -48,7 +48,7 @@ class HRAuthenticationTests(TestCase):
             'username': 'regular', 'password': 'pw',
         })
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'cannot access the HR console')
+        self.assertContains(response, 'cannot access this system')
         self.assertNotIn('_auth_user_id', self.client.session)
 
     def test_superuser_can_sign_in(self):
@@ -56,13 +56,13 @@ class HRAuthenticationTests(TestCase):
         response = self.client.post(reverse('hr:login'), {
             'username': 'boss', 'password': 'pw',
         })
-        self.assertRedirects(response, reverse('hr:dashboard'))
+        self.assertRedirects(response, reverse('hr:team_portal'))
 
     def test_authenticated_user_skips_login_page(self):
         _hr_user()
         self.client.login(username='ops', password='pw')
         response = self.client.get(reverse('hr:login'))
-        self.assertRedirects(response, reverse('hr:dashboard'))
+        self.assertRedirects(response, reverse('hr:team_portal'))
 
     def test_logout_returns_to_login(self):
         _hr_user()

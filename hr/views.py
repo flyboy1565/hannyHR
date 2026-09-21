@@ -266,7 +266,7 @@ class HRLoginView(LoginView):
         url = super().get_success_url()
         if url:
             return url
-        return reverse_lazy('hr:dashboard')
+        return reverse_lazy('hr:team_portal')
 
 
 class HRLogoutView(LogoutView):
@@ -365,6 +365,7 @@ class TeamMemberPortalView(HRPortalMixin, TemplateView):
 
         total_days = 0
         breakdown = {}
+        annotated_requests = []
 
         for lr in leave_requests:
             start = max(lr.start_date, year_start)
@@ -377,11 +378,12 @@ class TeamMemberPortalView(HRPortalMixin, TemplateView):
                 if lt_name not in breakdown:
                     breakdown[lt_name] = {'name': lt_name, 'color': lt_color, 'days': 0}
                 breakdown[lt_name]['days'] += days
+            annotated_requests.append({'request': lr, 'days': max(days, 0)})
 
         context.update({
             'employee': employee,
             'year': today.year,
-            'leave_requests': leave_requests,
+            'annotated_requests': annotated_requests,
             'total_days': total_days,
             'breakdown': sorted(breakdown.values(), key=lambda x: -x['days']),
         })

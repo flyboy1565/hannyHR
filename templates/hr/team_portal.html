@@ -23,7 +23,7 @@
         <span class="muted small">in {{ year }}</span>
     </div>
     <div class="card stat-card">
-        <div class="stat-number">{{ leave_requests.count }}</div>
+        <div class="stat-number">{{ annotated_requests|length }}</div>
         <div class="stat-label">Leave requests</div>
         <span class="muted small">documented this year</span>
     </div>
@@ -61,24 +61,20 @@
             </tr>
         </thead>
         <tbody>
-            {% for item in leave_requests %}
+            {% for item in annotated_requests %}
                 <tr>
-                    <td><span class="badge" style="background: {{ item.leave_type.color }}">{{ item.leave_type.name }}</span></td>
-                    <td>{{ item.start_date }} → {{ item.end_date }}</td>
+                    <td><span class="badge" style="background: {{ item.request.leave_type.color }}">{{ item.request.leave_type.name }}</span></td>
+                    <td>{{ item.request.start_date }} &rarr; {{ item.request.end_date }}</td>
+                    <td>{{ item.days }} day{{ item.days|pluralize }}</td>
                     <td>
-                        {% with start=item.start_date end=item.end_date %}
-                            {{ end|timeuntil:start|add:"1" }} day{{ end|timeuntil:start|add:"1"|pluralize }}
-                        {% endwith %}
-                    </td>
-                    <td>
-                        {% if item.status == 'completed' %}
+                        {% if item.request.status == 'completed' %}
                             <span class="badge" style="background: var(--success)">Completed</span>
                         {% else %}
                             <span class="badge" style="background: var(--primary)">In progress</span>
                         {% endif %}
                     </td>
                     <td class="td-actions">
-                        <a class="btn btn-sm" href="{% url 'leave:leave_detail' item.pk %}">View</a>
+                        <a class="btn btn-sm" href="{% url 'leave:leave_detail' item.request.pk %}">View</a>
                     </td>
                 </tr>
             {% empty %}
