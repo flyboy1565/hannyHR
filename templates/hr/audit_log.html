@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}Audit Log · HR console · hannyHR{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1>Audit Log</h1>
+        <p class="muted">Track all model changes across the system. Filterable by model, user, and action type.</p>
+    </div>
+</section>
+
+<form method="get" class="filter-bar" action="{% url 'hr:audit_log' %}">
+    <div class="field">
+        <label for="model">Model</label>
+        <select id="model" name="model" class="form-input">
+            <option value="">All models</option>
+            {% for val, label in model_choices %}
+                <option value="{{ val }}" {% if filters.model == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="field">
+        <label for="actor_id">User</label>
+        <select id="actor_id" name="actor_id" class="form-input">
+            <option value="">All users</option>
+            {% for u in users %}
+                <option value="{{ u.id }}" {% if filters.actor_id == u.id|stringformat:"d" %}selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="field">
+        <label for="action">Action</label>
+        <select id="action" name="action" class="form-input">
+            <option value="">All actions</option>
+            {% for val, label in action_choices %}
+                <option value="{{ val }}" {% if filters.action == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="field filter-submit">
+        <button type="submit" class="btn">Filter</button>
+    </div>
+</form>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>User</th>
+                <th>Model</th>
+                <th>Object</th>
+                <th>Action</th>
+                <th>Changes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in log_entries %}
+                <tr>
+                    <td class="muted small">{{ entry.timestamp|date:'j M Y H:i' }}</td>
+                    <td>{% if entry.actor %}{{ entry.actor.get_full_name|default:entry.actor.username }}{% else %}System{% endif %}</td>
+                    <td>{{ entry.content_type.model|capfirst }}</td>
+                    <td>
+                        <span class="muted">#{{ entry.object_repr }}</span>
+                    </td>
+                    <td>
+                        {% if entry.action == 0 %}
+                            <span class="badge" style="background: var(--success)">Created</span>
+                        {% elif entry.action == 1 %}
+                            <span class="badge" style="background: var(--primary)">Updated</span>
+                        {% elif entry.action == 2 %}
+                            <span class="badge" style="background: var(--danger)">Deleted</span>
+                        {% endif %}
+                    </td>
+                    <td class="muted small">
+                        {% if entry.changes %}
+                            {% for field, change in entry.changes_dict.items %}
+                                <strong>{{ field }}</strong>: {{ change.0 }} → {{ change.1 }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="6" class="muted">No audit log entries found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if is_paginated %}
+    <p class="muted small">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</p>
+{% endif %}
+{% endblock %}

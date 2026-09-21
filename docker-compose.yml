@@ -9,6 +9,7 @@ services:
     environment:
       DB_ENGINE: sqlite
       DB_NAME: db.sqlite3
+      SEED_DEMO: "True"
     ports:
       - "8050:8000"
     volumes:

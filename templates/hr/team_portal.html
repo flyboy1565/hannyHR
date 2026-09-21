@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}My Portal · hannyHR{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1>My Portal</h1>
+        <p class="muted">Welcome, {{ employee.full_name }}. Here's your leave overview for {{ year }}.</p>
+    </div>
+</section>
+
+{% if no_employee %}
+    <div class="card callout">
+        <p>Your account is not linked to an employee record. Please contact an administrator to set this up.</p>
+    </div>
+{% else %}
+
+<div class="grid grid-3">
+    <div class="card stat-card">
+        <div class="stat-number">{{ total_days }}</div>
+        <div class="stat-label">Total leave days taken</div>
+        <span class="muted small">in {{ year }}</span>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-number">{{ leave_requests.count }}</div>
+        <div class="stat-label">Leave requests</div>
+        <span class="muted small">documented this year</span>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-number">{{ breakdown|length }}</div>
+        <div class="stat-label">Leave types used</div>
+        <span class="muted small">different categories</span>
+    </div>
+</div>
+
+{% if breakdown %}
+<h2 class="section-title">Breakdown by leave type</h2>
+<div class="grid grid-3">
+    {% for item in breakdown %}
+        <div class="card">
+            <div class="card-head">
+                <span class="badge" style="background: {{ item.color }}">{{ item.name }}</span>
+                <span class="muted">{{ item.days }} day{{ item.days|pluralize }}</span>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<h2 class="section-title">Leave requests in {{ year }}</h2>
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Dates</th>
+                <th>Days</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in leave_requests %}
+                <tr>
+                    <td><span class="badge" style="background: {{ item.leave_type.color }}">{{ item.leave_type.name }}</span></td>
+                    <td>{{ item.start_date }} → {{ item.end_date }}</td>
+                    <td>
+                        {% with start=item.start_date end=item.end_date %}
+                            {{ end|timeuntil:start|add:"1" }} day{{ end|timeuntil:start|add:"1"|pluralize }}
+                        {% endwith %}
+                    </td>
+                    <td>
+                        {% if item.status == 'completed' %}
+                            <span class="badge" style="background: var(--success)">Completed</span>
+                        {% else %}
+                            <span class="badge" style="background: var(--primary)">In progress</span>
+                        {% endif %}
+                    </td>
+                    <td class="td-actions">
+                        <a class="btn btn-sm" href="{% url 'leave:leave_detail' item.pk %}">View</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="5" class="muted">No leave requests documented for {{ year }}.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endif %}
+{% endblock %}

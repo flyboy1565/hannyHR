@@ -1,4 +1,4 @@
-{% load static %}<!DOCTYPE html>
+{% load static %}{% load hijack %}<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -19,6 +19,15 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body>
+{% if request.user.is_hijacked %}
+<div class="hijack-banner">
+    <span>You are viewing the site as <strong>{{ request.user.get_full_name|default:request.user.username }}</strong></span>
+    <form method="post" action="{% url 'hijack:release' %}">
+        {% csrf_token %}
+        <button class="btn btn-sm btn-ghost" type="submit">Release</button>
+    </form>
+</div>
+{% endif %}
 <header class="topbar">
     <div class="topbar-inner">
         <a class="brand" href="{% url 'leave:leave_type_list' %}">hanny<span>HR</span></a>
@@ -26,7 +35,15 @@
             <a href="{% url 'leave:leave_type_list' %}">Overview</a>
             <a href="{% url 'leave:request_list' %}">Leave requests</a>
             <a href="{% url 'leave:request_new' %}">Document leave</a>
-            <a href="{% url 'hr:dashboard' %}">HR console</a>
+            {% if perms.employees.can_manage_hr %}
+                <a href="{% url 'hr:dashboard' %}">HR console</a>
+            {% endif %}
+            {% if perms.employees.can_manage_hr or perms.employees.can_view_team_portal %}
+                <a href="{% url 'hr:team_portal' %}">My Portal</a>
+            {% endif %}
+            {% if perms.employees.can_manage_hr %}
+                <a href="{% url 'hr:audit_log' %}">Audit Log</a>
+            {% endif %}
             {% if user.is_superuser %}
                 <a href="{% url 'admin:index' %}">Admin</a>
             {% endif %}

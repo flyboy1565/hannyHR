@@ -35,4 +35,7 @@ urlpatterns = [
 
     path('login/', views.HRLoginView.as_view(), name='login'),
     path('logout/', views.HRLogoutView.as_view(), name='logout'),
+
+    path('audit-log/', views.AuditLogView.as_view(), name='audit_log'),
+    path('my-portal/', views.TeamMemberPortalView.as_view(), name='team_portal'),
 ]

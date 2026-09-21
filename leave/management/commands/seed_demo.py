@@ -20,18 +20,55 @@ class Command(BaseCommand):
         if not UserModel.objects.filter(username='hr').exists():
             UserModel.objects.create_superuser('hr', 'hr@example.com', 'hannyhr123')
 
-        group, _ = Group.objects.get_or_create(name='HR Staff')
-        group.permissions.add(
-            Permission.objects.get(codename='can_manage_hr')
+        # Create groups
+        supervisor_group, _ = Group.objects.get_or_create(name='HR Supervisor')
+        team_member_group, _ = Group.objects.get_or_create(name='HR Team Member')
+
+        # Supervisor permissions: can_manage_hr, can_hijack_users, leave CRUD
+        supervisor_perms = Permission.objects.filter(
+            codename__in=[
+                'can_manage_hr', 'can_hijack_users', 'can_view_team_portal',
+                'add_leaverequest', 'view_leaverequest', 'change_leaverequest',
+            ]
         )
-        group.permissions.add(
-            Permission.objects.get(codename='add_leaverequest')
+        supervisor_group.permissions.set(supervisor_perms)
+
+        # Team Member permissions: can_view_team_portal, leave CRUD
+        team_member_perms = Permission.objects.filter(
+            codename__in=[
+                'can_view_team_portal',
+                'add_leaverequest', 'view_leaverequest', 'change_leaverequest',
+            ]
         )
+        team_member_group.permissions.set(team_member_perms)
+
+        # HR Supervisor user: hr.supervisor / supervisor123
+        if not UserModel.objects.filter(username='hr.supervisor').exists():
+            supervisor = UserModel.objects.create_user(
+                'hr.supervisor', 'hr.supervisor@example.com', 'supervisor123'
+            )
+            supervisor.groups.add(supervisor_group)
+        else:
+            supervisor = UserModel.objects.get(username='hr.supervisor')
+            supervisor.groups.add(supervisor_group)
+
+        # HR Team Member user: hr.ops / hroperations123
         if not UserModel.objects.filter(username='hr.ops').exists():
             ops = UserModel.objects.create_user(
                 'hr.ops', 'hr.ops@example.com', 'hroperations123'
             )
-            ops.groups.add(group)
+            ops.groups.add(team_member_group)
+        else:
+            ops = UserModel.objects.get(username='hr.ops')
+            ops.groups.add(team_member_group)
+
+        # Regular employee user: alice / alice123
+        if not UserModel.objects.filter(username='alice').exists():
+            alice = UserModel.objects.create_user(
+                'alice', 'alice@example.com', 'alice123'
+            )
+        else:
+            alice = UserModel.objects.get(username='alice')
 
         employees = [
             # Engineering
@@ -95,6 +132,12 @@ class Command(BaseCommand):
         ]
         for data in employees:
             Employee.objects.get_or_create(employee_id=data['employee_id'], defaults=data)
+
+        # Link Alice to her employee record
+        alice_emp = Employee.objects.get(employee_id='EMP-1001')
+        if not alice_emp.user:
+            alice_emp.user = alice
+            alice_emp.save()
 
         self.seed_injury()
         self.seed_maternity()

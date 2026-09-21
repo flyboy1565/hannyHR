@@ -225,3 +225,10 @@ class LeaveAttributeValue(models.Model):
             option = self.attribute.options.filter(value=self.value_text).first()
             return option.label if option else self.value_text
         return self.value_text
+
+
+from auditlog.registry import auditlog
+
+auditlog.register(LeaveType)
+auditlog.register(LeaveRequest)
+auditlog.register(LeaveAttributeValue)

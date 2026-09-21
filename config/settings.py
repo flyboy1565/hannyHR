@@ -33,6 +33,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'auditlog',
+    'hijack',
+    'hijack.contrib.admin',
     'widget_tweaks',
     'employees',
     'leave',
@@ -46,6 +49,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'auditlog.middleware.AuditlogMiddleware',
+    'hijack.middleware.HijackUserMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -132,3 +137,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL = 'hr:login'
 LOGIN_REDIRECT_URL = 'hr:dashboard'
+
+# django-hijack
+HIJACK_PERMISSION_REQUIRE_STAFF_OR_SUPERUSER = False
+HIJACK_PERMISSION_CHECK = 'hr.hijack_permissions.hijack_permission_check'
+HIJACK_LOGIN_REDIRECT_URL = '/'
+HIJACK_LOGOUT_REDIRECT_URL = '/manage/'
+HIJACK_ALLOW_GET_REQUESTS = False
+HIJACK_WARN_ACCESS_TO_OTHER_USER_WITH_ONE_TO_ONE_FIELD = True
+
+# django-auditlog
+AUDITLOG_FRONTEND_URL = '/manage/audit-log/'
+AUDITLOG_TRACKING_FIELDS = False

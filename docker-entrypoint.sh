@@ -4,6 +4,10 @@ set -e
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
 
+if [ "$SEED_DEMO" = "True" ]; then
+    python manage.py seed_demo
+fi
+
 if [ "$DEBUG" = "True" ]; then
     exec python manage.py runserver 0.0.0.0:8000
 else

@@ -13,7 +13,7 @@
 
 <form method="get" class="filter-bar" action="{% url 'hr:employee_list' %}">
     <div class="field">
-        <input type="text" name="q" value="{{ q }}" class="form-input" placeholder="Search name, ID or department…">
+        <input type="text" name="q" value="{{ q }}" class="form-input" placeholder="Search name, ID or department...">
     </div>
     <div class="field filter-submit">
         <button type="submit" class="btn">Search</button>
@@ -49,6 +49,13 @@
                         {% endif %}
                     </td>
                     <td class="td-actions">
+                        {% if employee.user and perms.employees.can_hijack_users and not employee.user.is_superuser %}
+                            <form method="post" action="{% url 'hijack:acquire' %}" style="display:inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="user_pk" value="{{ employee.user.pk }}">
+                                <button class="btn btn-sm btn-ghost" type="submit" title="View as this user">View as</button>
+                            </form>
+                        {% endif %}
                         <a class="btn btn-sm" href="{% url 'hr:employee_edit' employee.pk %}">Edit</a>
                         <a class="btn btn-sm btn-ghost" href="{% url 'hr:employee_delete' employee.pk %}">Delete</a>
                     </td>

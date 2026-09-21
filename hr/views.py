@@ -23,7 +23,7 @@ from .forms import (
     LeaveAttributeForm,
     LeaveTypeForm,
 )
-from .mixins import HRConsoleMixin
+from .mixins import HRConsoleMixin, HRPortalMixin
 
 
 class HRDashboardView(HRConsoleMixin, TemplateView):
@@ -273,3 +273,116 @@ class HRLogoutView(LogoutView):
     """End the HR session and return to the (reusable) HR sign-in page."""
 
     next_page = reverse_lazy('hr:login')
+
+
+# --------------------------------------------------------------------------
+# Audit Log
+# --------------------------------------------------------------------------
+
+class AuditLogView(HRConsoleMixin, ListView):
+    template_name = 'hr/audit_log.html'
+    context_object_name = 'log_entries'
+    paginate_by = 50
+
+    def get_queryset(self):
+        from auditlog.models import LogEntry
+
+        qs = LogEntry.objects.select_related('actor').order_by('-timestamp')
+
+        model = self.request.GET.get('model', '').strip()
+        actor_id = self.request.GET.get('actor_id', '').strip()
+        action = self.request.GET.get('action', '').strip()
+
+        if model:
+            qs = qs.filter(content_type__model=model)
+        if actor_id:
+            qs = qs.filter(actor_id=actor_id)
+        if action:
+            qs = qs.filter(action=action)
+
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from django.contrib.auth import get_user_model
+
+        User = get_user_model()
+        context['users'] = User.objects.filter(
+            id__in=self.get_queryset().values_list('actor_id', flat=True).distinct()[:50]
+        )
+        context['filters'] = {
+            'model': self.request.GET.get('model', ''),
+            'actor_id': self.request.GET.get('actor_id', ''),
+            'action': self.request.GET.get('action', ''),
+        }
+        context['model_choices'] = [
+            ('employee', 'Employee'),
+            ('leavetype', 'Leave Type'),
+            ('leaverequest', 'Leave Request'),
+            ('leaveattributevalue', 'Leave Attribute Value'),
+        ]
+        context['action_choices'] = [
+            ('0', 'Create'),
+            ('1', 'Update'),
+            ('2', 'Delete'),
+        ]
+        return context
+
+
+# --------------------------------------------------------------------------
+# Team Member Portal
+# --------------------------------------------------------------------------
+
+class TeamMemberPortalView(HRPortalMixin, TemplateView):
+    template_name = 'hr/team_portal.html'
+
+    def get_context_data(self, **kwargs):
+        import datetime
+        from django.db.models import Sum
+        from django.utils import timezone
+
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        today = timezone.now().date()
+        year_start = datetime.date(today.year, 1, 1)
+        year_end = datetime.date(today.year, 12, 31)
+
+        employee = getattr(user, 'employee_profile', None)
+
+        if employee is None:
+            context['no_employee'] = True
+            return context
+
+        leave_requests = (
+            LeaveRequest.objects.filter(
+                employee=employee,
+                start_date__lte=year_end,
+                end_date__gte=year_start,
+            )
+            .select_related('leave_type')
+            .order_by('-start_date')
+        )
+
+        total_days = 0
+        breakdown = {}
+
+        for lr in leave_requests:
+            start = max(lr.start_date, year_start)
+            end = min(lr.end_date, year_end)
+            days = (end - start).days + 1
+            if days > 0:
+                total_days += days
+                lt_name = lr.leave_type.name
+                lt_color = lr.leave_type.color
+                if lt_name not in breakdown:
+                    breakdown[lt_name] = {'name': lt_name, 'color': lt_color, 'days': 0}
+                breakdown[lt_name]['days'] += days
+
+        context.update({
+            'employee': employee,
+            'year': today.year,
+            'leave_requests': leave_requests,
+            'total_days': total_days,
+            'breakdown': sorted(breakdown.values(), key=lambda x: -x['days']),
+        })
+        return context

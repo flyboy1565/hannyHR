@@ -299,3 +299,57 @@ tbody tr:last-child td { border-bottom: none; }
 .theme-toggle .theme-toggle-moon { display: inline; }
 :root[data-theme="dark"] .theme-toggle .theme-toggle-sun { display: inline; }
 :root[data-theme="dark"] .theme-toggle .theme-toggle-moon { display: none; }
+
+/* Hijack impersonation banner */
+.hijack-banner {
+    background: #f59e0b;
+    color: #000;
+    padding: 0.5rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 11;
+}
+.hijack-banner .btn-ghost { color: #000; }
+.hijack-banner .btn-ghost:hover { text-decoration: underline; }
+
+/* Stat cards */
+.stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+.stat-number {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1;
+}
+.stat-label {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+.stat-card .muted { margin-top: 0.25rem; }
+.stat-card .card-actions { margin-top: 0.75rem; }
+
+/* Status badges */
+.status {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+.status-active { background: var(--success-bg); color: var(--success-text); }
+.status-leave { background: #fef3c7; color: #92400e; }
+.status-term { background: var(--danger-bg); color: var(--danger-text); }
+
+/* Quick task cards */
+.quick-task { transition: border-color 0.15s; }
+.quick-task:hover { border-color: var(--primary); text-decoration: none; }
+.quick-task strong { display: block; margin-bottom: 0.25rem; }
