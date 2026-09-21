@@ -23,6 +23,22 @@ fill-out time, so the tool never hard-codes a leave reason.
   documentation items (attributes + options). Gated behind the
   `employees.can_manage_hr` permission (`is_staff` not required, so HR staff
   get zero admin access); only superusers also see the "Admin" link.
+- **HR login/logout** (`/manage/login/`, `/manage/logout/`) — purpose-built
+  authentication for the HR console; only accounts with the `can_manage_hr`
+  permission (or superusers) can sign in.
+- **Role hierarchy** — two HR groups control access:
+  - **HR Supervisor** — full console access + ability to impersonate any non-superuser via django-hijack.
+  - **HR Team Member** — can document leave and view their own team portal.
+- **User impersonation** (`django-hijack`) — supervisors can "View as" any
+  employee from the employee list. A yellow banner shows who you're
+  impersonating, with a one-click release button.
+- **Team member portal** (`/manage/my-portal/`) — shows the logged-in
+  employee's leave overview for the current year: total days taken,
+  breakdown by leave type, and a list of individual requests.
+- **Audit log** (`/manage/audit-log/`) — filterable log of all model
+  changes (creates, updates, deletes) across Employee, LeaveType,
+  LeaveRequest, and LeaveAttributeValue. Filterable by model, user, and
+  action type.
 - **Leave record view** — read-only page listing every documented item and its value, plus uploaded attachments.
 - **Filterable request list** — filter by leave type or employee.
 - **Django admin** — full UI for managing employees, leave types, and their attributes.
@@ -37,6 +53,8 @@ fill-out time, so the tool never hard-codes a leave reason.
 | Templates | Server-rendered Django templates |
 | Styling | Hand-rolled CSS (no framework) |
 | Rich text | Zero-dependency contenteditable widget |
+| Audit trail | django-auditlog |
+| User impersonation | django-hijack |
 | Serving | Django dev server or Gunicorn + WhiteNoise |
 | DB | SQLite or PostgreSQL (`psycopg`) |
 
@@ -45,8 +63,11 @@ fill-out time, so the tool never hard-codes a leave reason.
 ## Architecture
 
 ```
-LeaveType (entity) ──1──*── LeaveAttribute ──1──*── LeaveAttrOption
-     │                                              (choices for select/multiselect)
+User ──1──1── Employee ──1──*── LeaveRequest ──1──*── LeaveAttributeValue
+                                │
+                                │
+LeaveType ──1──*── LeaveAttribute ──1──*── LeaveAttrOption
+     │              (dynamic form fields)
      │ 1
      │ *
 LeaveRequest ──1──*── LeaveAttributeValue
@@ -54,13 +75,34 @@ LeaveRequest ──1──*── LeaveAttributeValue
   summary, status)
 ```
 
-| Model | EAV role | Purpose |
-|---|---|---|
-| `LeaveType` | Entity | A category of leave (Injury, Maternity, …) |
-| `LeaveAttribute` | Attribute | A dynamic form field: type, required, validation, condition |
-| `LeaveAttrOption` | Attribute options | Choices for dropdown / multi-select fields |
-| `LeaveRequest` | Entity instance | One leave event for an employee (with standard from/to dates) |
-| `LeaveAttributeValue` | Value | The recorded value(s) for an attribute on a request |
+| Model | Purpose |
+|---|---|
+| `Employee` | Team member record; linked to a Django `User` via `OneToOneField` |
+| `LeaveType` | A category of leave (Injury, Maternity, …) |
+| `LeaveAttribute` | A dynamic form field: type, required, validation, condition |
+| `LeaveAttrOption` | Choices for dropdown / multi-select fields |
+| `LeaveRequest` | One leave event for an employee (with standard from/to dates) |
+| `LeaveAttributeValue` | The recorded value(s) for an attribute on a request |
+
+### HR role groups
+
+| Group | Permissions |
+|---|---|
+| **HR Supervisor** | `can_manage_hr`, `can_hijack_users`, `can_view_team_portal`, leave CRUD |
+| **HR Team Member** | `can_view_team_portal`, leave CRUD |
+
+Superusers bypass all checks and can access everything (console, admin,
+impersonation, portal).
+
+### User impersonation
+
+Supervisors can click **"View as"** next to any employee who has a linked
+user account (non-superuser). django-hijack swaps the session to that user
+and shows a yellow banner with a **Release** button to return.
+
+Permission check: `hr/hijack_permissions.py` — custom function that allows
+superusers or `can_hijack_users` holders to impersonate any active,
+non-superuser account.
 
 ### Defining a dynamic field
 
@@ -133,22 +175,33 @@ healthcheck, and points the web container at it via `DB_ENGINE=postgres`,
 
 ### First run (either DB)
 
+Demo data is seeded automatically on container startup. To seed manually:
+
 ```bash
 docker compose exec web python manage.py seed_demo
 ```
 
-This creates a superuser `hr / hannyhr123` plus sample employees and four leave
-types (Injury, Maternity, Paternity, Death in the Family) with realistic
-attributes and conditional logic.
+This creates:
+
+- **Superuser** `hr / hannyhr123` — full admin + console access
+- **HR Supervisor** `hr.supervisor / supervisor123` — console + impersonation
+- **HR Team Member** `hr.ops / hroperations123` — console + team portal
+- **Regular employee** `alice / alice123` — linked to EMP-1001 (Alice Moyo)
+- Sample employees, four leave types with realistic attributes and conditional logic
 
 Log in at **http://localhost:8050**:
 
 | URL | Purpose |
 |---|---|
-| `/` | HR dashboard — leave types & recent records |
-| `/admin/` | Configure employees, leave types, attributes |
+| `/manage/login/` | HR login (purpose-built, not Django admin) |
+| `/manage/` | HR dashboard — stats, quick tasks, recent records |
+| `/manage/employees/` | Employee list with "View as" impersonation buttons |
+| `/manage/leave-types/` | Leave type management |
+| `/manage/my-portal/` | Team member portal — personal leave overview |
+| `/manage/audit-log/` | System-wide audit trail (supervisors only) |
 | `/new/` | Document a leave (pick employee + type → tailored form) |
 | `/requests/` | Filterable list of all leave records |
+| `/admin/` | Django admin (superusers only) |
 
 ### Choosing the server mode
 
@@ -231,6 +284,7 @@ POSTGRES_PORT=5432
 | `POSTGRES_DB/_USER/_PASSWORD` | `hannyhr` | Used when `DB_ENGINE=postgres` |
 | `POSTGRES_HOST` / `POSTGRES_PORT` | `localhost` / `5432` | `db` / `5432` under compose |
 | `GUNICORN_WORKERS` | `3` | Gunicorn process count (docker only) |
+| `SEED_DEMO` | `False` | Set to `True` to auto-seed demo data on startup |
 
 ---
 
@@ -238,30 +292,32 @@ POSTGRES_PORT=5432
 
 ```bash
 # Docker:
-docker compose exec web python manage.py test leave
+docker compose exec web python manage.py test
 
 # Local:
-.venv/bin/python manage.py test leave
+.venv/bin/python manage.py test
 ```
 
-10 tests cover field-type mapping, validation rules, conditional required
-logic (hidden vs. visible), value save/reload round-trips, and the full
-create/edit HTTP flows; 13 more cover the HR console (access gating, employee
-CRUD, leave-type/attribute/option create+edit+delete flows).
+30 tests cover:
+- Field-type mapping, validation rules, conditional required logic (hidden vs. visible), value save/reload round-trips, and the full create/edit HTTP flows
+- HR console access gating, employee CRUD, leave-type/attribute/option create+edit+delete flows
+- HR authentication (login/logout, permission checks)
 
 ---
 
 ## Project layout
 
 ```
-hr/             HR console: mixins, forms, views, urls, tests
-config/            settings, URL routing
-employees/         Employee model + admin
-leave/             EAV engine: models, dynamic forms, views, admin, tests
-templates/         base, dashboard, select, form, list, detail
-static/            CSS + conditional-visibility / rich-text JS
+hr/                  HR console: mixins, forms, views, urls, tests
+                     hijack_permissions.py — custom impersonation access check
+config/              settings, URL routing
+employees/           Employee model (with user OneToOneField) + admin
+leave/               EAV engine: models, dynamic forms, views, admin, tests
+templates/           base, dashboard, select, form, list, detail, login,
+                     audit_log, team_portal
+static/              CSS + conditional-visibility / rich-text JS
 docker-compose*.yml  SQLite and PostgreSQL stacks
-docker-entrypoint.sh migrate → collectstatic → serve
+docker-entrypoint.sh migrate → seed_demo → collectstatic → serve
 ```
 
 ## Roadmap ideas
@@ -270,3 +326,4 @@ docker-entrypoint.sh migrate → collectstatic → serve
 - Exports (CSV/PDF) of leave records
 - S3-compatible storage for attachments
 - Notification emails to managers/support groups
+- Leave balance/accrual tracking per employee
