@@ -32,8 +32,10 @@
     <div class="topbar-inner">
         <a class="brand" href="{% url 'leave:leave_type_list' %}">hanny<span>HR</span></a>
         <nav class="nav">
-            <a href="{% url 'leave:leave_type_list' %}">Overview</a>
-            {% if perms.employees.can_manage_hr or perms.employees.can_hijack_users %}
+            {% if perms.employees.can_manage_hr %}
+                <a href="{% url 'leave:leave_type_list' %}">Overview</a>
+            {% endif %}
+            {% if perms.employees.can_manage_hr or perms.employees.can_hijack_users or perms.leave.add_leaverequest %}
                 <a href="{% url 'leave:request_list' %}">Leave requests</a>
                 <a href="{% url 'leave:request_new' %}">Document leave</a>
             {% endif %}

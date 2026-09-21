@@ -39,11 +39,11 @@ class Command(BaseCommand):
         )
         supervisor_group.permissions.set(supervisor_perms)
 
-        # Team Member permissions: can_view_team_portal, read-only leave access
+        # Team Member permissions: can_view_team_portal, can document own leaves
         team_member_perms = Permission.objects.filter(
             codename__in=[
                 'can_view_team_portal',
-                'view_leaverequest',
+                'add_leaverequest', 'view_leaverequest',
             ]
         )
         team_member_group.permissions.set(team_member_perms)
